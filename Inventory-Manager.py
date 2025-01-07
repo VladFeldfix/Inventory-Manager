@@ -123,6 +123,27 @@ class main:
         self.sc.restart()
     
     def delete(self):
+        # load inventory
+        inventory = self.sc.load_database("inventory.csv", ("INDEX", "DESCRIPTION", "BARCODE", "EXP. DATE"))
+
+        # get item index
+        index = self.sc.input("Insert item index to delete")
+
+        # delete item
+        if not index in inventory:
+            self.sc.error("This index is not in the database!")
+            self.sc.warning("Procedure aborted!")
+        else:
+            self.sc.print("Selected item:")
+            self.sc.print(index+" "+inventory[index][0]+" "+inventory[index][1]+" "+inventory[index][2])
+            if self.sc.question("Are you sure you want to delete this item?"):
+                del inventory[index]
+                self.sc.good("Successfully removed from inventory!")
+            else:
+                self.sc.warning("Procedure aborted!")
+        
+        self.sc.save_database("inventory.csv", inventory)
+
         # restart
         self.sc.restart()
 main()
