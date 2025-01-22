@@ -2,7 +2,7 @@ table, tr, td, th{
     border: 1px solid black;
     border-collapse: collapse;
     padding: 5px;
-    font-family: 'Courier New', Courier, monospace;
+    font-family:Arial, Helvetica, sans-serif
 }
 th{
     background-color: #4a4a4a;
