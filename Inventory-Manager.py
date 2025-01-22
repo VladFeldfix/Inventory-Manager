@@ -5,33 +5,58 @@ class main:
     # constructor
     def __init__(self):
         # load smart console
-        self.sc = SmartConsole("Inventory Manager", "1.1")
+        self.sc = SmartConsole("Inventory Manager", "2.0")
 
         # set-up main memu
         self.sc.add_main_menu_item("VIEW INVENTORY", self.view)
         self.sc.add_main_menu_item("ADD ITEM", self.add)
         self.sc.add_main_menu_item("DELETE ITEM", self.delete)
+        self.sc.add_main_menu_item("SWITCH DEFAULT INVENTORY", self.switch)
 
-        # test paths
-        self.sc.test_path("inventory.csv")
-        self.sc.test_path("items.csv")
+        # get settings and set paths
+        self.get_settings_test_paths()
 
         # display main menu
         self.sc.start()
     
     ### MAIN MENU ###
     def view(self):
+        # display inventory
+        self.display_inventory()
+
         # get inventory
-        inventory = self.sc.load_database("inventory.csv", ("INDEX", "NAME", "DESCRIPTION", "BARCODE", "EXP. DATE"))
+        inventory = self.sc.load_database(self.inventory, ("INDEX", "NAME", "DESCRIPTION", "BARCODE", "EXP. DATE"))
         
         # order by item description
         sorted_inventory = dict(sorted(inventory.items(), key=lambda item: item[1]))
 
         # save as an html file
-        file = open('output.html', 'w')
+        file = open(self.db_location+"/"+self.db_name+"/output.html", 'w')
         file.write('<html>\n')
-        file.write('\t<link rel="stylesheet" href="style.css" type="text/css">\n')
+        file.write('\t<head>\n')
+        file.write('\t\t<style>\n')
+        file.write('\t\t\ttable, tr, td, th{\n')
+        file.write('\t\t\t\tborder: 1px solid black;\n')
+        file.write('\t\t\t\tborder-collapse: collapse;\n')
+        file.write('\t\t\t\tpadding: 5px;\n')
+        file.write('\t\t\t\tfont-family:Arial, Helvetica, sans-serif\n')
+        file.write('\t\t\t}\n')
+        file.write('\t\t\tbody{\n')
+        file.write('\t\t\t\tfont-family:Arial, Helvetica, sans-serif\n')
+        file.write('\t\t\t}\n')
+        file.write('\t\t\tth{\n')
+        file.write('\t\t\t\tbackground-color: #4a4a4a;\n')
+        file.write('\t\t\t\tcolor: white;\n')
+        file.write('\t\t\t\ttext-align: left;\n')
+        file.write('\t\t\t}\n')
+        file.write('\t\t\t.red{\n')
+        file.write('\t\t\t\tcolor: red;\n')
+        file.write('\t\t\t}\n')
+        file.write('\t\t</style>\n')
+        file.write('\t</head>\n')
         file.write('\t<body>\n')
+        file.write('\t\t<h1>Inventory name: '+self.db_name+'</h1>\n')
+        file.write('\t\t<h3>Last update: '+self.sc.today()+" "+self.sc.now()+'</h3>\n')
         file.write('\t\t<table>\n')
         file.write('\t\t\t<tr>\n')
         file.write('\t\t\t\t<th>INDEX</th>\n')
@@ -63,17 +88,20 @@ class main:
         file.close()
 
         # open file
-        os.popen('output.html')
+        os.popen(self.db_location+"/"+self.db_name+"/output.html")
         
         # restart
         self.sc.restart()
 
     def add(self):
+        # display inventory
+        self.display_inventory()
+
         # variables
         abort = False
 
         # get items database
-        items = self.sc.load_database("items.csv", ("BARCODE","NAME","DESCRIPTION"))
+        items = self.sc.load_database(self.items, ("BARCODE","NAME","DESCRIPTION"))
 
         # get barcode
         barcode = self.sc.input("Insert barcode")
@@ -90,7 +118,7 @@ class main:
                 name = self.sc.input("Insert item name")
                 description = self.sc.input("Insert item description")
                 items[barcode] = [name,description]
-                self.sc.save_database("items.csv", items)
+                self.sc.save_database(self.items, items)
                 self.sc.good(barcode+" "+name+" "+description+" Successfully added to database!")
             else:
                 abort = True
@@ -105,7 +133,7 @@ class main:
 
             # add to inventory
             # load inventory
-            inventory = self.sc.load_database("inventory.csv", ("INDEX", "NAME", "DESCRIPTION", "BARCODE", "EXP. DATE"))
+            inventory = self.sc.load_database(self.inventory, ("INDEX", "NAME", "DESCRIPTION", "BARCODE", "EXP. DATE"))
 
             # get last box id
             index = 0
@@ -119,7 +147,7 @@ class main:
                     index = key + 1
             self.sc.print("Your index is:"+str(index))
             inventory[index] = (name,description,barcode,exp)
-            self.sc.save_database("inventory.csv", inventory)
+            self.sc.save_database(self.inventory, inventory)
             self.sc.good(str(index)+" "+name+" "+description+" "+barcode+" "+exp+" Successfully added to inventory!")
             expired = self.sc.compare_dates(exp, self.sc.today())
             if expired < 0:
@@ -129,8 +157,11 @@ class main:
         self.sc.restart()
     
     def delete(self):
+        # display inventory
+        self.display_inventory()
+        
         # load inventory
-        inventory = self.sc.load_database("inventory.csv", ("INDEX", "NAME", "DESCRIPTION", "BARCODE", "EXP. DATE"))
+        inventory = self.sc.load_database(self.inventory, ("INDEX", "NAME", "DESCRIPTION", "BARCODE", "EXP. DATE"))
 
         # get item index
         index = self.sc.input("Insert item index to delete")
@@ -148,8 +179,59 @@ class main:
             else:
                 self.sc.warning("Procedure aborted!")
         
-        self.sc.save_database("inventory.csv", inventory)
+        self.sc.save_database(self.inventory, inventory)
 
         # restart
         self.sc.restart()
+    
+    def switch(self):
+        # display inventory
+        self.display_inventory()
+        
+        databases = []
+        for root, dirs, files in os.walk(self.db_location):
+            for dir in dirs:
+                databases.append(dir)
+        
+        choice = self.sc.choose("Choose new default inventory",databases)
+        self.sc.good("New default inventory is selected to be: "+choice)
+        file = open("settings.txt", 'w')
+        file.write("Database Location > "+self.db_location+"\n")
+        file.write("Default Database > "+choice+"\n")
+        file.close()
+
+        # get settings and set paths
+        self.db_name = choice
+        self.inventory = self.db_location+"/"+self.db_name+"/inventory.csv"
+        self.items = self.db_location+"/"+self.db_name+"/items.csv"
+        
+        # restart
+        self.sc.restart()
+    
+    ### OTHER ###
+    def display_inventory(self):
+        self.sc.print("INVENTORY: "+self.db_name,"blue")
+    
+    def get_settings_test_paths(self):
+        # get settings
+        self.db_location = self.sc.get_setting("Database Location")
+        self.db_name = self.sc.get_setting("Default Database")
+        self.inventory = self.db_location+"/"+self.db_name+"/inventory.csv"
+        self.items = self.db_location+"/"+self.db_name+"/items.csv"
+
+        # make inventory and items
+        if not os.path.isfile(self.inventory):
+            file = open(self.inventory, 'w')
+            file.write("INDEX,NAME,DESCRIPTION,BARCODE,EXP. DATE\n")
+            file.close()
+        if not os.path.isfile(self.items):
+            file = open(self.items, 'w')
+            file.write("BARCODE,NAME,DESCRIPTION\n")
+            file.close()     
+
+        # test paths
+        self.sc.test_path(self.db_location)
+        self.sc.test_path(self.db_location+"/"+self.db_name)
+        self.sc.test_path(self.inventory)
+        self.sc.test_path(self.items)
 main()

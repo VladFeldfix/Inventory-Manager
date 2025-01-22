@@ -1,1 +1,2 @@
-Labeling folder > Y:\Rafael\Cables\Cable Marking
+Database Location > D:\Users\Vlad\Documents\My Databases
+Default Database > Test
