@@ -1,2 +1,2 @@
 Database Location > D:\Users\Vlad\Documents\My Databases
-Default Database > Test
+Default Database > Medicine

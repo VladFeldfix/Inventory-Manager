@@ -14,7 +14,31 @@ class main:
         self.sc.add_main_menu_item("SWITCH DEFAULT INVENTORY", self.switch)
 
         # get settings and set paths
-        self.get_settings_test_paths()
+        # get settings
+        self.db_location = self.sc.get_setting("Database Location")
+        self.db_name = self.sc.get_setting("Default Database")
+        self.inventory = self.db_location+"/"+self.db_name+"/inventory.csv"
+        self.items = self.db_location+"/"+self.db_name+"/items.csv"
+
+        # create folder
+        if not os.path.isdir(self.db_location+"/"+self.db_name):
+            os.makedirs(self.db_location+"/"+self.db_name)
+
+        # make inventory and items
+        if not os.path.isfile(self.inventory):
+            file = open(self.inventory, 'w')
+            file.write("INDEX,NAME,DESCRIPTION,BARCODE,EXP. DATE\n")
+            file.close()
+        if not os.path.isfile(self.items):
+            file = open(self.items, 'w')
+            file.write("BARCODE,NAME,DESCRIPTION\n")
+            file.close()     
+
+        # test paths
+        self.sc.test_path(self.db_location)
+        self.sc.test_path(self.db_location+"/"+self.db_name)
+        self.sc.test_path(self.inventory)
+        self.sc.test_path(self.items)
 
         # display main menu
         self.sc.start()
@@ -193,7 +217,20 @@ class main:
             for dir in dirs:
                 databases.append(dir)
         
+        databases.append(" * Create a new one...")
+        
         choice = self.sc.choose("Choose new default inventory",databases)
+        if choice == " * Create a new one...":
+            name = self.sc.input("Insert database name")
+            os.makedirs(self.db_location+"/"+name)
+            file = open(self.db_location+"/"+name+"/inventory.csv", 'w')
+            file.write("INDEX,NAME,DESCRIPTION,BARCODE,EXP. DATE\n")
+            file.close()
+            file = open(self.db_location+"/"+name+"/items.csv", 'w')
+            file.write("BARCODE,NAME,DESCRIPTION\n")
+            file.close()        
+            choice = name
+
         self.sc.good("New default inventory is selected to be: "+choice)
         file = open("settings.txt", 'w')
         file.write("Database Location > "+self.db_location+"\n")
@@ -211,27 +248,4 @@ class main:
     ### OTHER ###
     def display_inventory(self):
         self.sc.print("INVENTORY: "+self.db_name,"blue")
-    
-    def get_settings_test_paths(self):
-        # get settings
-        self.db_location = self.sc.get_setting("Database Location")
-        self.db_name = self.sc.get_setting("Default Database")
-        self.inventory = self.db_location+"/"+self.db_name+"/inventory.csv"
-        self.items = self.db_location+"/"+self.db_name+"/items.csv"
-
-        # make inventory and items
-        if not os.path.isfile(self.inventory):
-            file = open(self.inventory, 'w')
-            file.write("INDEX,NAME,DESCRIPTION,BARCODE,EXP. DATE\n")
-            file.close()
-        if not os.path.isfile(self.items):
-            file = open(self.items, 'w')
-            file.write("BARCODE,NAME,DESCRIPTION\n")
-            file.close()     
-
-        # test paths
-        self.sc.test_path(self.db_location)
-        self.sc.test_path(self.db_location+"/"+self.db_name)
-        self.sc.test_path(self.inventory)
-        self.sc.test_path(self.items)
 main()
